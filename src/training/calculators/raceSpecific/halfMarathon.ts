@@ -1,0 +1,161 @@
+import { Experience, RestType } from 'src/training/types';
+
+export function halfMarathonRaceSpecific(racePace: number) {
+  return {
+    [Experience.FirstTimer]: [
+      {
+        reps: 3,
+        interval: 2000,
+        pace: racePace,
+        restType: RestType.Jog,
+        rest: 500,
+      },
+      {
+        reps: 3,
+        interval: 5000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+        progression: true,
+      },
+      {
+        reps: 1,
+        interval: 10000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+      },
+      {
+        reps: 2,
+        interval: 6000,
+        pace: racePace,
+        restType: RestType.Break,
+        rest: 240,
+      },
+    ],
+    [Experience.Beginner]: [
+      {
+        reps: 4,
+        interval: 2000,
+        pace: racePace,
+        restType: RestType.Jog,
+        rest: 500,
+      },
+      {
+        reps: 3,
+        interval: 6000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+        progression: true,
+      },
+      {
+        reps: 1,
+        interval: 12000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+      },
+      {
+        reps: 2,
+        interval: 7000,
+        pace: racePace,
+        restType: RestType.Break,
+        rest: 240,
+      },
+    ],
+    [Experience.Intermediate]: [
+      {
+        reps: 4,
+        interval: 3000,
+        pace: racePace,
+        restType: RestType.Jog,
+        rest: 600,
+      },
+      {
+        reps: 3,
+        interval: 8000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+        progression: true,
+      },
+      {
+        reps: 1,
+        interval: 14000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+      },
+      {
+        reps: 2,
+        interval: 8000,
+        pace: racePace,
+        restType: RestType.Break,
+        rest: 240,
+      },
+    ],
+    [Experience.Advanced]: [
+      {
+        reps: 5,
+        interval: 3000,
+        pace: racePace,
+        restType: RestType.Jog,
+        rest: 800,
+      },
+      {
+        reps: 3,
+        interval: 10000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+        progression: true,
+      },
+      {
+        reps: 1,
+        interval: 16000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+      },
+      {
+        reps: 2,
+        interval: 10000,
+        pace: racePace,
+        restType: RestType.Break,
+        rest: 240,
+      },
+    ],
+    [Experience.Elite]: [
+      {
+        reps: 5,
+        interval: 3000,
+        pace: racePace,
+        restType: RestType.Jog,
+        rest: 600,
+      },
+      {
+        reps: 3,
+        interval: 10000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+        progression: true,
+      },
+      {
+        reps: 1,
+        interval: 16000,
+        pace: racePace,
+        restType: RestType.None,
+        rest: 0,
+      },
+      {
+        reps: 2,
+        interval: 10000,
+        pace: racePace,
+        restType: RestType.Break,
+        rest: 240,
+      },
+    ],
+  };
+}

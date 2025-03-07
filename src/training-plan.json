@@ -1,0 +1,92 @@
+{
+  "21k": {
+    "beginner": {
+      "weekly_distance": 30,
+      "training_days": 4,
+      "long_run_km": 16,
+      "pace_calculations": {
+        "easy_run": "current_pr_pace + 0.90",
+        "tempo_run": "current_pr_pace - 0.10",
+        "speed_workout": "max_heart_rate * 0.85"
+      },
+      "speed_workout": {
+        "type": "intervals",
+        "formula": "6 * (1000, speed_workout_pace, 90)"
+      },
+      "tempo_run": {
+        "distance_km": 10,
+        "pace": "tempo_run_pace"
+      },
+      "easy_runs": [
+        { "distance_km": 8, "pace": "easy_run_pace" },
+        { "distance_km": 10, "pace": "easy_run_pace" }
+      ]
+    },
+    "intermediate": {
+      "weekly_distance": 60,
+      "training_days": 4,
+      "long_run_km": 18,
+      "pace_calculations": {
+        "easy_run": "current_pr_pace + 0.50",
+        "tempo_run": "current_pr_pace - 0.10",
+        "speed_workout": "max_heart_rate * 0.85"
+      },
+      "speed_workout": {
+        "type": "intervals",
+        "formula": "6 * (1000, speed_workout_pace, 90)"
+      },
+      "tempo_run": {
+        "distance_km": 10,
+        "pace": "tempo_run_pace"
+      },
+      "easy_runs": [
+        { "distance_km": 8, "pace": "easy_run_pace" },
+        { "distance_km": 10, "pace": "easy_run_pace" }
+      ]
+    },
+    "advanced": {
+      "weekly_distance": 90,
+      "training_days": 6,
+      "long_run_km": 30,
+      "pace_calculations": {
+        "easy_run": "current_pr_pace + 0.50",
+        "tempo_run": "current_pr_pace - 0.10",
+        "speed_workout": "max_heart_rate * 0.85"
+      },
+      "speed_workout": {
+        "type": "intervals",
+        "formula": "6 * (1000, speed_workout_pace, 90)"
+      },
+      "tempo_run": {
+        "distance_km": 10,
+        "pace": "tempo_run_pace"
+      },
+      "easy_runs": [
+        { "distance_km": 12, "pace": "easy_run_pace" },
+        { "distance_km": 14, "pace": "easy_run_pace" }
+      ]
+    },
+    "elite": {
+      "weekly_distance": 120,
+      "training_days": 7,
+      "long_run_km": 35,
+      "pace_calculations": {
+        "easy_run": "current_pr_pace + 0.50",
+        "tempo_run": "current_pr_pace - 0.10",
+        "speed_workout": "max_heart_rate * 0.85"
+      },
+      "speed_workout": {
+        "type": "intervals",
+        "formula": "6 * (1000, speed_workout_pace, 90)"
+      },
+      "tempo_run": {
+        "distance_km": 10,
+        "pace": "tempo_run_pace"
+      },
+      "easy_runs": [
+        { "distance_km": 12, "pace": "easy_run_pace" },
+        { "distance_km": 14, "pace": "easy_run_pace" }
+      ]
+    }
+  }
+}
