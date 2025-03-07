@@ -1,9 +1,10 @@
-import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsEnum } from 'class-validator';
+import { Distance } from '../types';
 
 export class GeneratePlanDto {
-  @IsString()
+  @IsEnum(Distance)
   @IsNotEmpty()
-  race_distance: string; // Example: '21k'
+  race_distance: Distance; // Example: '21k'
 
   @IsString()
   @IsNotEmpty()

@@ -15,13 +15,10 @@ export class TrainingController {
   @Post('generate-plan')
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   generatePlan(@Body() generatePlanDto: GeneratePlanDto) {
-    const { race_distance, experience, current_best_time, max_heart_rate } =
-      generatePlanDto;
+    const { race_distance, current_best_time } = generatePlanDto;
     return this.trainingService.generateTrainingPlan(
       race_distance,
-      experience,
       current_best_time,
-      max_heart_rate,
     );
   }
 }

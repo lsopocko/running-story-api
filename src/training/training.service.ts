@@ -3,12 +3,13 @@ import {
   Distance,
   Experience,
   GeneratePlanResponse,
+  HR,
   IntervalWorkout,
   RunType,
+  TrainingDay,
   TrainingWeek,
+  Weekday,
 } from './types';
-import { PaceCalculations, TrainingRules } from './types/trainingRules';
-import * as trainingRulesJson from '../training-plan.json';
 import { k5raceSpecific } from './calculators/raceSpecific/k5';
 import { k10raceSpecific } from './calculators/raceSpecific/k10';
 import { marathonRaceSpecific } from './calculators/raceSpecific/marathon';
@@ -22,31 +23,7 @@ function formatPace(pace: number): string {
 
 @Injectable()
 export class TrainingService {
-  private trainingRules: TrainingRules = trainingRulesJson;
-
   constructor() {}
-
-  private calculatePaces(
-    prTime: number,
-    maxHr: number,
-    formulas: PaceCalculations,
-  ): Record<string, number> {
-    const prPace = prTime / 21;
-    const paceVars = { current_pr_pace: prPace, max_heart_rate: maxHr };
-
-    return Object.fromEntries(
-      Object.entries(formulas).map(([key, formula]: string[]) => [
-        key,
-        eval(
-          formula.replace(/([a-z_]+)/g, (_, v: string) =>
-            paceVars[v as keyof typeof paceVars] !== undefined
-              ? paceVars[v as keyof typeof paceVars].toString()
-              : '0',
-          ),
-        ),
-      ]),
-    );
-  }
 
   predictRaceTime(currentTime: number, currentDistance: number): number {
     const fatigueFactor = 1.06;
@@ -57,10 +34,10 @@ export class TrainingService {
   }
 
   getExperienceLevelFrom10kTime(time10k: number): Experience {
-    const isFirstTimer = time10k > 65;
-    const isBeginner = time10k > 55 && time10k < 65;
-    const isIntermediate = time10k > 45 && time10k < 55;
-    const isAdvanced = time10k > 37.5 && time10k < 45;
+    const isFirstTimer = time10k >= 65;
+    const isBeginner = time10k >= 55 && time10k < 65;
+    const isIntermediate = time10k >= 45 && time10k < 55;
+    const isAdvanced = time10k >= 37.5 && time10k < 45;
 
     if (isFirstTimer) return Experience.FirstTimer;
     if (isBeginner) return Experience.Beginner;
@@ -93,7 +70,7 @@ export class TrainingService {
     }
   }
 
-  getSuggestedNumberOfTrainingDays(experience: Experience): number[] {
+  getSuggestedNumberOfTrainingDays(experience: Experience): [number, number] {
     switch (experience) {
       case Experience.FirstTimer:
         return [2, 3];
@@ -110,52 +87,52 @@ export class TrainingService {
     }
   }
 
-  getTrainingBlockLength(experience: Experience, distance: Distance): number[] {
+  getTrainingBlockLength(
+    experience: Experience,
+    distance: Distance,
+  ): [number, number] {
     switch (experience) {
       case Experience.FirstTimer:
         return {
-          [Distance.k5]: [8 - 12],
+          [Distance.k5]: [8, 12],
           [Distance.k10]: [12, 16],
           [Distance.HalfMarathon]: [16, 20],
           [Distance.Marathon]: [20, 24],
-        }[distance];
+        }[distance] as [number, number];
       case Experience.Beginner:
         return {
-          [Distance.k5]: [6 - 10],
+          [Distance.k5]: [6, 10],
           [Distance.k10]: [10, 14],
           [Distance.HalfMarathon]: [14, 18],
           [Distance.Marathon]: [18, 22],
-        }[distance];
+        }[distance] as [number, number];
       case Experience.Intermediate:
         return {
-          [Distance.k5]: [6 - 8],
+          [Distance.k5]: [6, 8],
           [Distance.k10]: [8, 12],
           [Distance.HalfMarathon]: [12, 16],
           [Distance.Marathon]: [16, 20],
-        }[distance];
+        }[distance] as [number, number];
       case Experience.Advanced:
         return {
-          [Distance.k5]: [4 - 6],
+          [Distance.k5]: [4, 6],
           [Distance.k10]: [6, 10],
           [Distance.HalfMarathon]: [10, 14],
           [Distance.Marathon]: [12, 16],
-        }[distance];
+        }[distance] as [number, number];
       case Experience.Elite:
         return {
-          [Distance.k5]: [3 - 6],
+          [Distance.k5]: [3, 6],
           [Distance.k10]: [4, 8],
           [Distance.HalfMarathon]: [8, 12],
           [Distance.Marathon]: [10, 14],
-        }[distance];
+        }[distance] as [number, number];
       default:
         throw new Error(`Invalid experience level`);
     }
   }
 
-  calculateHR(
-    runnerLevel: Experience,
-    age: number,
-  ): { hrMax: number; easyHR: number[] } {
+  calculateHR(runnerLevel: Experience, age: number): HR {
     let hrMax: number;
 
     switch (runnerLevel) {
@@ -182,8 +159,8 @@ export class TrainingService {
     const easyHRMax = Math.round(hrMax * 0.7);
 
     return {
-      hrMax: Math.round(hrMax),
-      easyHR: [easyHRMin, easyHRMax],
+      max: Math.round(hrMax),
+      easy: [easyHRMin, easyHRMax],
     };
   }
 
@@ -332,85 +309,158 @@ export class TrainingService {
     };
   }
 
-  generateTrainingPlan(
-    raceDistance: string,
-    experience: string,
-    prTime: number,
-    maxHr: number,
-  ): GeneratePlanResponse {
-    if (
-      !this.trainingRules[raceDistance] ||
-      !this.trainingRules[raceDistance][experience]
-    ) {
-      throw new Error(
-        `No training plan found for ${experience} runners at ${raceDistance}`,
-      );
+  generateTrainingWeek(
+    trainingDaysRange: [number, number], // Min and max training days
+    runTypes: RunType[], // Run types for the runner level
+    trainingWeek: number, // Current week in training block
+    trainingBlockLength: number, // Total weeks in training block
+  ): TrainingDay[] {
+    const weekDays: Weekday[] = [
+      Weekday.Monday,
+      Weekday.Tuesday,
+      Weekday.Wednesday,
+      Weekday.Thursday,
+      Weekday.Friday,
+      Weekday.Saturday,
+      Weekday.Sunday,
+    ];
+    const minTrainingDays = trainingDaysRange[0]; // Required training days
+    const maxTrainingDays = trainingDaysRange[1]; // Maximum possible training days
+    const optionalDays = maxTrainingDays - minTrainingDays; // Number of optional training days
+
+    const plan: TrainingDay[] = [];
+
+    // Always include Long Run on Sunday if possible
+    if (minTrainingDays >= 3) {
+      plan.push({ day: Weekday.Sunday, workout: { type: RunType.Long } });
     }
 
-    const planTemplate = this.trainingRules[raceDistance][experience];
-    const paceValues = this.calculatePaces(
-      prTime,
-      maxHr,
-      planTemplate.pace_calculations,
+    // Determine when to introduce Race-Specific Workouts
+    const raceSpecificStart = Math.floor(trainingBlockLength * 0.4); // 40% into the plan
+
+    let remainingDays = minTrainingDays - 1; // Already used for Long Run
+    let lastWorkoutDay: Weekday | null = null;
+
+    for (let i = 0; i < weekDays.length && remainingDays > 0; i++) {
+      if (weekDays[i] === Weekday.Sunday) continue; // Skip, reserved for Long Run
+
+      let selectedWorkout: RunType;
+
+      // Introduce Race-Specific Runs only after a certain week
+      if (
+        trainingWeek >= raceSpecificStart &&
+        runTypes.includes(RunType.RaceSpecific) &&
+        !plan.some((w) => w.workout.type === RunType.RaceSpecific)
+      ) {
+        selectedWorkout = RunType.RaceSpecific;
+      } else {
+        // Select a workout that hasn't been assigned yet
+        const availableWorkouts = runTypes.filter(
+          (r) =>
+            r !== RunType.RaceSpecific &&
+            r !== RunType.Recovery &&
+            !plan.some((w) => w.workout.type === r),
+        );
+
+        if (availableWorkouts.length === 0)
+          availableWorkouts.push(RunType.Easy);
+
+        selectedWorkout =
+          availableWorkouts[
+            Math.floor(Math.random() * availableWorkouts.length)
+          ];
+      }
+
+      // Ensure no more than 3 consecutive training days
+      if (lastWorkoutDay) {
+        const lastWorkoutIndex = weekDays.indexOf(lastWorkoutDay);
+        if (
+          i - lastWorkoutIndex === 1 &&
+          plan.length >= 2 &&
+          plan[plan.length - 1].workout.type !== RunType.Rest
+        ) {
+          plan.push({ day: weekDays[i], workout: { type: RunType.Rest } });
+          lastWorkoutDay = null;
+          continue;
+        }
+      }
+
+      plan.push({ day: weekDays[i], workout: { type: selectedWorkout } });
+      lastWorkoutDay = weekDays[i];
+      remainingDays--;
+    }
+
+    // Assign optional workouts for extra training days (Only Easy or Recovery)
+    let optionalCount = optionalDays;
+    for (let i = 0; i < weekDays.length && optionalCount > 0; i++) {
+      if (!plan.some((w) => w.day === weekDays[i])) {
+        const optionalWorkout = RunType.Recovery;
+        plan.push({
+          day: weekDays[i],
+          workout: { type: optionalWorkout },
+          optional: true,
+        });
+        optionalCount--;
+      }
+    }
+
+    // Fill remaining days with "Rest"
+    return weekDays.map(
+      (day) =>
+        plan.find((w) => w.day === day) || {
+          day,
+          workout: { type: RunType.Rest },
+        },
+    );
+  }
+
+  generateTrainingPlan(
+    raceDistance: Distance,
+    prTime: number,
+  ): GeneratePlanResponse {
+    const trainingPlan: TrainingWeek[] = [];
+
+    const distanceInMeters = {
+      [Distance.k5]: 5,
+      [Distance.k10]: 10,
+      [Distance.HalfMarathon]: 21.09,
+      [Distance.Marathon]: 42.2,
+    }[raceDistance];
+
+    const predictedTime = this.predictRaceTime(prTime, distanceInMeters);
+
+    const experience = this.getExperienceLevelFrom10kTime(predictedTime);
+    const numberOfTrainingDays =
+      this.getSuggestedNumberOfTrainingDays(experience);
+    const trainingBlockLength = this.getTrainingBlockLength(
+      experience,
+      Distance.k10,
     );
 
-    const trainingPlan: TrainingWeek[] = [];
-    for (let week = 1; week <= 16; week++) {
-      trainingPlan.push({
+    const runTypes = this.getRunTypes(experience);
+
+    const heart_rate = this.calculateHR(experience, 36);
+
+    for (let week = 1; week <= trainingBlockLength[1]; week++) {
+      const trainingWeek: TrainingWeek = {
         week,
-        days: [
-          {
-            day: 'Monday',
-            workout: {
-              type: 'easy',
-              distance_km: 12,
-              pace: `${paceValues['easy_run'].toFixed(2)} min/km`,
-            },
-          },
-          {
-            day: 'Tuesday',
-            workout: {
-              type: 'speed',
-              details: `6x1000m @ ${paceValues['speed_workout'].toFixed(2)} min/km with 90s rest`,
-            },
-          },
-          { day: 'Wednesday', workout: { type: 'rest' } },
-          {
-            day: 'Thursday',
-            workout: {
-              type: 'tempo',
-              distance_km: 10,
-              pace: `${paceValues['tempo_run'].toFixed(2)} min/km`,
-            },
-          },
-          {
-            day: 'Friday',
-            workout: {
-              type: 'easy',
-              distance_km: 12,
-              pace: `${paceValues['easy_run'].toFixed(2)} min/km`,
-            },
-          },
-          {
-            day: 'Saturday',
-            workout: {
-              type: 'long',
-              distance_km: planTemplate.long_run_km,
-              pace: '4:30-4:50 min/km',
-            },
-          },
-          { day: 'Sunday', workout: { type: 'rest' } },
-        ],
-      });
+        days: this.generateTrainingWeek(
+          numberOfTrainingDays,
+          runTypes,
+          week,
+          trainingBlockLength[0],
+        ),
+      };
+
+      trainingPlan.push(trainingWeek);
     }
 
     return {
       user: {
         experience,
+        heart_rate,
         race_distance: raceDistance,
         current_best_time: prTime,
-        max_heart_rate: maxHr,
-        weekly_distance: planTemplate.weekly_distance,
       },
       training_plan: trainingPlan,
     };

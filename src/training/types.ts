@@ -6,15 +6,40 @@ export interface GeneratePlanRequest {
 }
 
 export interface Workout {
-  type: string;
+  type: RunType;
   distance_km?: number;
-  pace?: string;
-  details?: string;
+  pace?: number;
+  warmup?: {
+    pace: number;
+    time: number;
+  };
+  cooldown?: {
+    pace: number;
+    time: number;
+  };
+  main?: {
+    reps: number;
+    interval: number;
+    pace: number;
+    restType: RestType;
+    rest: number;
+  };
+}
+
+export const enum Weekday {
+  Monday = 'Monday',
+  Tuesday = 'Tuesday',
+  Wednesday = 'Wednesday',
+  Thursday = 'Thursday',
+  Friday = 'Friday',
+  Saturday = 'Saturday',
+  Sunday = 'Sunday',
 }
 
 export interface TrainingDay {
-  day: string;
+  day: Weekday;
   workout: Workout;
+  optional?: boolean;
 }
 
 export interface TrainingWeek {
@@ -22,46 +47,53 @@ export interface TrainingWeek {
   days: TrainingDay[];
 }
 
+export interface HR {
+  max: number;
+  easy: number[];
+}
+
+export type TrainingPlan = TrainingWeek[];
+
 export interface GeneratePlanResponse {
   user: {
-    experience: string;
-    race_distance: string;
+    experience: Experience;
+    race_distance: Distance;
     current_best_time: number;
-    max_heart_rate: number;
-    weekly_distance: number;
+    heart_rate?: HR;
   };
-  training_plan: TrainingWeek[];
+  training_plan: TrainingPlan;
 }
 
 export const enum Experience {
-  FirstTimer,
-  Beginner,
-  Intermediate,
-  Advanced,
-  Elite,
+  FirstTimer = 'FirstTimer',
+  Beginner = 'Beginner',
+  Intermediate = 'Intermediate',
+  Advanced = 'Advanced',
+  Elite = 'Elite',
 }
 
 export const enum RunType {
-  RunWalkIntervals,
-  Easy,
-  Speedwork,
-  Tempo,
-  Long,
-  RaceSpecific,
-  Recovery,
+  RunWalkIntervals = 'RunWalkIntervals',
+  Easy = 'Easy',
+  Speedwork = 'Speedwork',
+  Tempo = 'Tempo',
+  Long = 'Long',
+  RaceSpecific = 'RaceSpecific',
+  Recovery = 'Recovery',
+  Rest = 'Rest',
 }
 
-export const enum Distance {
-  k5,
-  k10,
-  HalfMarathon,
-  Marathon,
+export enum Distance {
+  k5 = '5k',
+  k10 = '10k',
+  HalfMarathon = 'HalfMarathon',
+  Marathon = 'Marathon',
 }
 
 export const enum RestType {
-  Jog,
-  Break,
-  None,
+  Jog = 'Jog',
+  Break = 'Break',
+  None = 'None',
 }
 
 export interface IntervalWorkout {
