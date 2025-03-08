@@ -7,6 +7,7 @@ import {
   IntervalWorkout,
   RunType,
   TrainingDay,
+  TrainingPlan,
   TrainingWeek,
   Weekday,
 } from './types';
@@ -19,6 +20,10 @@ function formatPace(pace: number): string {
   const minutes = Math.floor(pace);
   const seconds = Math.round((pace - minutes) * 60);
   return `${minutes}:${seconds.toString().padStart(2, '0')}/km`;
+}
+
+function round2(num: number): number {
+  return Math.round(num * 100) / 100;
 }
 
 @Injectable()
@@ -304,8 +309,10 @@ export class TrainingService {
         progress * (levelMultiplier.peak - levelMultiplier.start));
 
     return {
-      easyRunPace: formatPace(easyRunPace),
-      easyRunDistance: `${easyRunDistance.toFixed(1)} km`,
+      paceFormatted: `${formatPace(easyRunPace)} - ${formatPace(easyRunPace * 1.05)}`,
+      distanceFormatted: `${easyRunDistance.toFixed(1)} km`,
+      distance_km: round2(easyRunDistance),
+      pace: [round2(easyRunPace), round2(easyRunPace * 1.05)],
     };
   }
 
@@ -414,11 +421,38 @@ export class TrainingService {
     );
   }
 
+  fillWorkoutDetails(trainingPlan: TrainingPlan, experience): TrainingPlan {
+    for (const week of trainingPlan) {
+      for (const day of week.days) {
+        switch (day.workout.type) {
+          case RunType.Easy: {
+            const { distance_km, pace } = this.calculateEasyRun(
+              experience,
+              trainingPlan.length,
+              week.week,
+              10,
+              41,
+            );
+            day.workout.pace = pace as [number, number];
+            day.workout.distance_km = distance_km;
+            break;
+          }
+
+          default:
+            break;
+        }
+      }
+    }
+
+    return trainingPlan;
+  }
+
   generateTrainingPlan(
     raceDistance: Distance,
     prTime: number,
+    desiredPrTime: number,
   ): GeneratePlanResponse {
-    const trainingPlan: TrainingWeek[] = [];
+    const trainingPlan: TrainingPlan = [];
 
     const distanceInMeters = {
       [Distance.k5]: 5,
@@ -454,6 +488,8 @@ export class TrainingService {
 
       trainingPlan.push(trainingWeek);
     }
+
+    this.fillWorkoutDetails(trainingPlan, experience);
 
     return {
       user: {

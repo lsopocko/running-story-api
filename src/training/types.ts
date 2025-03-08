@@ -8,7 +8,7 @@ export interface GeneratePlanRequest {
 export interface Workout {
   type: RunType;
   distance_km?: number;
-  pace?: number;
+  pace?: [number, number];
   warmup?: {
     pace: number;
     time: number;
@@ -17,7 +17,7 @@ export interface Workout {
     pace: number;
     time: number;
   };
-  main?: {
+  sections?: {
     reps: number;
     interval: number;
     pace: number;

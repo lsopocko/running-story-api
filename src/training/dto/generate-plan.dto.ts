@@ -16,5 +16,9 @@ export class GeneratePlanDto {
 
   @IsNumber()
   @IsNotEmpty()
+  desired_best_time: number; // In minutes (e.g., 95 for a 1h35m half-marathon)
+
+  @IsNumber()
+  @IsNotEmpty()
   max_heart_rate: number; // In bpm (e.g., 180)
 }
