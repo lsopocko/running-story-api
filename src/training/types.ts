@@ -9,6 +9,10 @@ export interface Workout {
   type: RunType;
   distance_km?: number;
   pace?: [number, number];
+  formatted?: {
+    distance: string;
+    pace: string;
+  };
   warmup?: {
     pace: number;
     time: number;

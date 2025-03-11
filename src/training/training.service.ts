@@ -233,8 +233,10 @@ export class TrainingService {
         progress * (levelMultiplier.peak - levelMultiplier.start));
 
     return {
-      tempoRunPace: formatPace(tempoRunPace),
-      tempoRunDistance: `${tempoRunDistance.toFixed(1)} km`,
+      paceFormatted: `${formatPace(tempoRunPace)} - ${formatPace(tempoRunPace * 1.05)} km`,
+      distanceFormatted: `${tempoRunDistance.toFixed(1)} km`,
+      pace: [round2(tempoRunPace), round2(tempoRunPace * 1.05)],
+      distance_km: round2(tempoRunDistance),
     };
   }
 
@@ -426,15 +428,38 @@ export class TrainingService {
       for (const day of week.days) {
         switch (day.workout.type) {
           case RunType.Easy: {
-            const { distance_km, pace } = this.calculateEasyRun(
-              experience,
-              trainingPlan.length,
-              week.week,
-              10,
-              41,
-            );
+            const { distance_km, pace, distanceFormatted, paceFormatted } =
+              this.calculateEasyRun(
+                experience,
+                trainingPlan.length,
+                week.week,
+                42,
+                170,
+              );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
+            day.workout.formatted = {
+              distance: distanceFormatted,
+              pace: paceFormatted,
+            };
+            break;
+          }
+
+          case RunType.Tempo: {
+            const { distance_km, pace, distanceFormatted, paceFormatted } =
+              this.calculateTempoRun(
+                experience,
+                trainingPlan.length,
+                week.week,
+                42,
+                170,
+              );
+            day.workout.pace = pace as [number, number];
+            day.workout.distance_km = distance_km;
+            day.workout.formatted = {
+              distance: distanceFormatted,
+              pace: paceFormatted,
+            };
             break;
           }
 
@@ -468,7 +493,7 @@ export class TrainingService {
       this.getSuggestedNumberOfTrainingDays(experience);
     const trainingBlockLength = this.getTrainingBlockLength(
       experience,
-      Distance.k10,
+      raceDistance,
     );
 
     const runTypes = this.getRunTypes(experience);
