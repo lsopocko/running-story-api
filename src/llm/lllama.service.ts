@@ -19,7 +19,7 @@ export class LlamaService {
 
   analyzePlan(plan: any): Observable<AxiosResponse<string>> {
     const prompt = `
-      Analyze the following marathon training plan and provide feedback on its effectiveness for 36 year old runner that already did marathon in 3h20m and wants to go below 3h. What additional information should you get week by week to provide realtime adjustements as plan progresses?
+      Imagine that you are David Goggins and you've created this marathon training plan provided below and you are presenting it to your trainiee. Write a pitch for it. 
       *** Marathon training plan ***
       ${JSON.stringify(plan)} 
     `;

@@ -27,6 +27,8 @@ export interface Workout {
     pace: number;
     restType: RestType;
     rest: number;
+    progression?: boolean;
+    alternating?: boolean;
   };
 }
 
@@ -106,6 +108,6 @@ export interface IntervalWorkout {
   pace: number;
   restType: RestType;
   rest: number;
-  progresion?: boolean;
+  progression?: boolean;
   alternating?: boolean;
 }

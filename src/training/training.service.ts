@@ -15,6 +15,13 @@ import { k5raceSpecific } from './calculators/raceSpecific/k5';
 import { k10raceSpecific } from './calculators/raceSpecific/k10';
 import { marathonRaceSpecific } from './calculators/raceSpecific/marathon';
 import { halfMarathonRaceSpecific } from './calculators/raceSpecific/halfMarathon';
+import {
+  halfMarathonSpeedWork,
+  k10SpeedWork,
+  k5SpeedWork,
+  marathonSpeedWork,
+} from './calculators/speedwork';
+import { getIntensity } from './getIntensity';
 
 function formatPace(pace: number): string {
   const minutes = Math.floor(pace);
@@ -175,7 +182,7 @@ export class TrainingService {
     trainingBlockLength: number,
     raceDistance: Distance,
     racePace: number,
-  ) {
+  ): IntervalWorkout {
     const progress = trainingWeek / trainingBlockLength;
 
     const raceWorkouts: Record<
@@ -186,6 +193,37 @@ export class TrainingService {
       [Distance.k10]: k10raceSpecific(racePace),
       [Distance.HalfMarathon]: halfMarathonRaceSpecific(racePace),
       [Distance.Marathon]: marathonRaceSpecific(racePace),
+    };
+
+    // Select workouts based on race distance and experience level
+    const workouts = raceWorkouts[raceDistance]?.[experience];
+
+    if (!workouts) {
+      throw new Error('No workout available for this level or race distance.');
+    }
+
+    return workouts[
+      Math.min(Math.floor(progress * workouts.length), workouts.length - 1)
+    ];
+  }
+
+  calculateSpeedworkRun(
+    experience: Experience,
+    trainingWeek: number,
+    trainingBlockLength: number,
+    raceDistance: Distance,
+    racePace: number,
+  ): IntervalWorkout {
+    const progress = trainingWeek / trainingBlockLength;
+
+    const raceWorkouts: Record<
+      Distance,
+      Record<Experience, IntervalWorkout[]>
+    > = {
+      [Distance.k5]: k5SpeedWork(racePace),
+      [Distance.k10]: k10SpeedWork(racePace),
+      [Distance.HalfMarathon]: halfMarathonSpeedWork(racePace),
+      [Distance.Marathon]: marathonSpeedWork(racePace),
     };
 
     // Select workouts based on race distance and experience level
@@ -273,8 +311,10 @@ export class TrainingService {
         progress * (levelMultiplier.peak - levelMultiplier.start));
 
     return {
-      longRunPace: formatPace(longRunPace),
-      longRunDistance: `${longRunDistance.toFixed(1)} km`,
+      paceFormatted: `${formatPace(longRunPace)} - ${formatPace(longRunPace * 1.05)} km`,
+      distanceFormatted: `${longRunDistance.toFixed(1)} km`,
+      pace: [round2(longRunPace), round2(longRunPace * 1.05)],
+      distance_km: round2(longRunDistance),
     };
   }
 
@@ -318,6 +358,46 @@ export class TrainingService {
     };
   }
 
+  calculateRecoveryRun(
+    experience: Experience,
+    trainingBlockLength: number,
+    week: number,
+    goalDistance: number,
+    goalTime: number, // in minutes
+  ) {
+    // 1️⃣ Calculate Goal Pace (min/km)
+    const goalPace = goalTime / goalDistance;
+
+    // 2️⃣ Calculate Recovery Run Pace (75-85% slower than goal pace)
+    const recoveryPaceMultiplier = 1.4; // Recovery runs are ~40% slower than goal pace
+    const recoveryRunPace = goalPace * recoveryPaceMultiplier;
+
+    // 3️⃣ Determine Recovery Run Distance (shorter than easy runs)
+    const recoveryRunMultipliers = {
+      [Experience.FirstTimer]: { start: 0.2, peak: 0.4 },
+      [Experience.Beginner]: { start: 0.3, peak: 0.5 },
+      [Experience.Intermediate]: { start: 0.35, peak: 0.6 },
+      [Experience.Advanced]: { start: 0.4, peak: 0.7 },
+      [Experience.Elite]: { start: 0.5, peak: 0.8 },
+    };
+
+    const levelMultiplier = recoveryRunMultipliers[experience];
+
+    // Recovery run distance progression (minimal increase over the block)
+    const progress = week / trainingBlockLength;
+    const recoveryRunDistance =
+      goalDistance *
+      (levelMultiplier.start +
+        progress * (levelMultiplier.peak - levelMultiplier.start));
+
+    return {
+      paceFormatted: `${formatPace(recoveryRunPace)} - ${formatPace(recoveryRunPace * 1.05)}`,
+      distanceFormatted: `${recoveryRunDistance.toFixed(1)} km`,
+      distance_km: round2(recoveryRunDistance),
+      pace: [round2(recoveryRunPace), round2(recoveryRunPace * 1.05)],
+    };
+  }
+
   generateTrainingWeek(
     trainingDaysRange: [number, number], // Min and max training days
     runTypes: RunType[], // Run types for the runner level
@@ -348,7 +428,6 @@ export class TrainingService {
     const raceSpecificStart = Math.floor(trainingBlockLength * 0.4); // 40% into the plan
 
     let remainingDays = minTrainingDays - 1; // Already used for Long Run
-    let lastWorkoutDay: Weekday | null = null;
 
     for (let i = 0; i < weekDays.length && remainingDays > 0; i++) {
       if (weekDays[i] === Weekday.Sunday) continue; // Skip, reserved for Long Run
@@ -380,22 +459,8 @@ export class TrainingService {
           ];
       }
 
-      // Ensure no more than 3 consecutive training days
-      if (lastWorkoutDay) {
-        const lastWorkoutIndex = weekDays.indexOf(lastWorkoutDay);
-        if (
-          i - lastWorkoutIndex === 1 &&
-          plan.length >= 2 &&
-          plan[plan.length - 1].workout.type !== RunType.Rest
-        ) {
-          plan.push({ day: weekDays[i], workout: { type: RunType.Rest } });
-          lastWorkoutDay = null;
-          continue;
-        }
-      }
-
       plan.push({ day: weekDays[i], workout: { type: selectedWorkout } });
-      lastWorkoutDay = weekDays[i];
+      // lastWorkoutDay = weekDays[i];
       remainingDays--;
     }
 
@@ -423,7 +488,11 @@ export class TrainingService {
     );
   }
 
-  fillWorkoutDetails(trainingPlan: TrainingPlan, experience): TrainingPlan {
+  fillWorkoutDetails(
+    trainingPlan: TrainingPlan,
+    experience,
+    desiredPrTime,
+  ): TrainingPlan {
     for (const week of trainingPlan) {
       for (const day of week.days) {
         switch (day.workout.type) {
@@ -459,6 +528,102 @@ export class TrainingService {
             day.workout.formatted = {
               distance: distanceFormatted,
               pace: paceFormatted,
+            };
+            break;
+          }
+
+          case RunType.Long: {
+            const { distance_km, pace, distanceFormatted, paceFormatted } =
+              this.calculateLongRun(
+                experience,
+                trainingPlan.length,
+                week.week,
+                42,
+                170,
+              );
+            day.workout.pace = pace as [number, number];
+            day.workout.distance_km = distance_km;
+            day.workout.formatted = {
+              distance: distanceFormatted,
+              pace: paceFormatted,
+            };
+            break;
+          }
+
+          case RunType.Recovery: {
+            const { distance_km, pace, distanceFormatted, paceFormatted } =
+              this.calculateRecoveryRun(
+                experience,
+                trainingPlan.length,
+                week.week,
+                42,
+                170,
+              );
+            day.workout.pace = pace as [number, number];
+            day.workout.distance_km = distance_km;
+            day.workout.formatted = {
+              distance: distanceFormatted,
+              pace: paceFormatted,
+            };
+            break;
+          }
+
+          case RunType.RaceSpecific: {
+            const racePace = desiredPrTime / 42;
+
+            const {
+              reps,
+              pace,
+              interval,
+              restType,
+              rest,
+              progression,
+              alternating,
+            } = this.calculateRaceSpecificRun(
+              experience,
+              trainingPlan.length,
+              week.week,
+              Distance.Marathon,
+              round2(racePace),
+            );
+            day.workout.sections = {
+              reps,
+              interval,
+              pace,
+              restType,
+              rest,
+              progression,
+              alternating,
+            };
+            break;
+          }
+
+          case RunType.Speedwork: {
+            const racePace = desiredPrTime / 42;
+
+            const {
+              reps,
+              pace,
+              interval,
+              restType,
+              rest,
+              progression,
+              alternating,
+            } = this.calculateSpeedworkRun(
+              experience,
+              trainingPlan.length,
+              week.week,
+              Distance.Marathon,
+              round2(racePace),
+            );
+            day.workout.sections = {
+              reps,
+              interval,
+              pace,
+              restType,
+              rest,
+              progression,
+              alternating,
             };
             break;
           }
@@ -507,14 +672,14 @@ export class TrainingService {
           numberOfTrainingDays,
           runTypes,
           week,
-          trainingBlockLength[0],
+          trainingBlockLength[1],
         ),
       };
 
       trainingPlan.push(trainingWeek);
     }
 
-    this.fillWorkoutDetails(trainingPlan, experience);
+    this.fillWorkoutDetails(trainingPlan, experience, desiredPrTime);
 
     return {
       user: {
