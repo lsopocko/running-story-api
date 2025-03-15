@@ -248,17 +248,17 @@ export class TrainingService {
     // 1️⃣ Calculate Goal Pace (min/km)
     const goalPace = goalTime / goalDistance;
 
-    // 2️⃣ Tempo Run Pace (~10-15% slower than goal pace)
-    const tempoPaceMultiplier = 1.1;
+    // 2️⃣ Tempo Run Pace (~10-15% faster than goal pace)
+    const tempoPaceMultiplier = 0.9;
     const tempoRunPace = goalPace * tempoPaceMultiplier;
 
     // 3️⃣ Determine Tempo Run Distance Progression
     const tempoRunMultipliers = {
-      [Experience.FirstTimer]: { start: 0.2, peak: 0.5 },
-      [Experience.Beginner]: { start: 0.3, peak: 0.6 },
-      [Experience.Intermediate]: { start: 0.4, peak: 0.7 },
-      [Experience.Advanced]: { start: 0.5, peak: 0.8 },
-      [Experience.Elite]: { start: 0.6, peak: 0.9 },
+      [Experience.FirstTimer]: { start: 0.1, peak: 0.19 },
+      [Experience.Beginner]: { start: 0.14, peak: 0.23 },
+      [Experience.Intermediate]: { start: 0.18, peak: 0.33 },
+      [Experience.Advanced]: { start: 0.25, peak: 0.38 },
+      [Experience.Elite]: { start: 0.33, peak: 0.48 },
     };
 
     const levelMultiplier = tempoRunMultipliers[experience];
@@ -271,7 +271,7 @@ export class TrainingService {
         progress * (levelMultiplier.peak - levelMultiplier.start));
 
     return {
-      paceFormatted: `${formatPace(tempoRunPace)} - ${formatPace(tempoRunPace * 1.05)} km`,
+      paceFormatted: `${formatPace(tempoRunPace)} - ${formatPace(tempoRunPace * 1.05)}`,
       distanceFormatted: `${tempoRunDistance.toFixed(1)} km`,
       pace: [round2(tempoRunPace), round2(tempoRunPace * 1.05)],
       distance_km: round2(tempoRunDistance),
@@ -294,11 +294,11 @@ export class TrainingService {
 
     // 3️⃣ Determine Long Run Distance Progression
     const longRunMultipliers = {
-      [Experience.FirstTimer]: { start: 0.4, peak: 0.8 },
-      [Experience.Beginner]: { start: 0.5, peak: 0.9 },
-      [Experience.Intermediate]: { start: 0.6, peak: 1.0 },
-      [Experience.Advanced]: { start: 0.7, peak: 1.1 },
-      [Experience.Elite]: { start: 0.8, peak: 1.2 },
+      [Experience.FirstTimer]: { start: 0.2, peak: 0.55 },
+      [Experience.Beginner]: { start: 0.45, peak: 0.65 },
+      [Experience.Intermediate]: { start: 0.5, peak: 0.75 },
+      [Experience.Advanced]: { start: 0.5, peak: 0.8 },
+      [Experience.Elite]: { start: 0.6, peak: 0.85 },
     };
 
     const levelMultiplier = longRunMultipliers[experience];
@@ -329,16 +329,16 @@ export class TrainingService {
     const goalPace = goalTime / goalDistance;
 
     // 2️⃣ Calculate Easy Run Pace (65-75% slower than goal pace)
-    const easyPaceMultiplier = 1.3; // Easy runs are ~30% slower than goal pace
+    const easyPaceMultiplier = 1.16; // Easy runs are ~30% slower than goal pace
     const easyRunPace = goalPace * easyPaceMultiplier;
 
     // 3️⃣ Determine Easy Run Distance Progression
     const easyRunMultipliers = {
-      [Experience.FirstTimer]: { start: 0.3, peak: 0.6 },
-      [Experience.Beginner]: { start: 0.4, peak: 0.7 },
-      [Experience.Intermediate]: { start: 0.5, peak: 0.8 },
-      [Experience.Advanced]: { start: 0.6, peak: 0.9 },
-      [Experience.Elite]: { start: 0.7, peak: 1.0 },
+      [Experience.FirstTimer]: { start: 0.2, peak: 0.55 },
+      [Experience.Beginner]: { start: 0.2, peak: 0.55 },
+      [Experience.Intermediate]: { start: 0.2, peak: 0.55 },
+      [Experience.Advanced]: { start: 0.3, peak: 0.6 },
+      [Experience.Elite]: { start: 0.45, peak: 0.8 },
     };
 
     const levelMultiplier = easyRunMultipliers[experience];
@@ -374,11 +374,11 @@ export class TrainingService {
 
     // 3️⃣ Determine Recovery Run Distance (shorter than easy runs)
     const recoveryRunMultipliers = {
-      [Experience.FirstTimer]: { start: 0.2, peak: 0.4 },
-      [Experience.Beginner]: { start: 0.3, peak: 0.5 },
-      [Experience.Intermediate]: { start: 0.35, peak: 0.6 },
-      [Experience.Advanced]: { start: 0.4, peak: 0.7 },
-      [Experience.Elite]: { start: 0.5, peak: 0.8 },
+      [Experience.FirstTimer]: { start: 0.1, peak: 0.3 },
+      [Experience.Beginner]: { start: 0.1, peak: 0.3 },
+      [Experience.Intermediate]: { start: 0.1, peak: 0.3 },
+      [Experience.Advanced]: { start: 0.1, peak: 0.3 },
+      [Experience.Elite]: { start: 0.15, peak: 0.35 },
     };
 
     const levelMultiplier = recoveryRunMultipliers[experience];
@@ -503,7 +503,7 @@ export class TrainingService {
                 trainingPlan.length,
                 week.week,
                 42,
-                170,
+                190,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
@@ -521,7 +521,7 @@ export class TrainingService {
                 trainingPlan.length,
                 week.week,
                 42,
-                170,
+                190,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
@@ -539,7 +539,7 @@ export class TrainingService {
                 trainingPlan.length,
                 week.week,
                 42,
-                170,
+                190,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
@@ -557,7 +557,7 @@ export class TrainingService {
                 trainingPlan.length,
                 week.week,
                 42,
-                170,
+                190,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
