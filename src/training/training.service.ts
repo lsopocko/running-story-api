@@ -586,6 +586,16 @@ export class TrainingService {
               Distance.Marathon,
               round2(racePace),
             );
+            const distance =
+              alternating || progression
+                ? interval / 1000
+                : round2((reps * interval) / 1000);
+            day.workout.distance_km = distance;
+            day.workout.formatted = {
+              distance: `${distance.toFixed(1)} km`,
+              pace: `${formatPace(pace)} - ${formatPace(pace * 1.05)}`,
+            };
+
             day.workout.sections = {
               reps,
               interval,
@@ -616,6 +626,12 @@ export class TrainingService {
               Distance.Marathon,
               round2(racePace),
             );
+            const distance = round2((reps * interval) / 1000);
+            day.workout.distance_km = distance;
+            day.workout.formatted = {
+              distance: `${distance.toFixed(1)} km`,
+              pace: `${formatPace(pace)} - ${formatPace(pace * 1.05)}`,
+            };
             day.workout.sections = {
               reps,
               interval,
