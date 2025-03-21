@@ -491,7 +491,9 @@ export class TrainingService {
   fillWorkoutDetails(
     trainingPlan: TrainingPlan,
     experience,
+    currentPrTime,
     desiredPrTime,
+    distanceNumber: number,
   ): TrainingPlan {
     for (const week of trainingPlan) {
       for (const day of week.days) {
@@ -502,8 +504,8 @@ export class TrainingService {
                 experience,
                 trainingPlan.length,
                 week.week,
-                42,
-                190,
+                distanceNumber,
+                currentPrTime,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
@@ -520,8 +522,8 @@ export class TrainingService {
                 experience,
                 trainingPlan.length,
                 week.week,
-                42,
-                190,
+                distanceNumber,
+                desiredPrTime,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
@@ -538,8 +540,8 @@ export class TrainingService {
                 experience,
                 trainingPlan.length,
                 week.week,
-                42,
-                190,
+                distanceNumber,
+                currentPrTime,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
@@ -556,8 +558,8 @@ export class TrainingService {
                 experience,
                 trainingPlan.length,
                 week.week,
-                42,
-                190,
+                distanceNumber,
+                currentPrTime,
               );
             day.workout.pace = pace as [number, number];
             day.workout.distance_km = distance_km;
@@ -569,7 +571,7 @@ export class TrainingService {
           }
 
           case RunType.RaceSpecific: {
-            const racePace = desiredPrTime / 42;
+            const racePace = desiredPrTime / distanceNumber;
 
             const {
               reps,
@@ -609,7 +611,7 @@ export class TrainingService {
           }
 
           case RunType.Speedwork: {
-            const racePace = desiredPrTime / 42;
+            const racePace = desiredPrTime / distanceNumber;
 
             const {
               reps,
@@ -657,17 +659,18 @@ export class TrainingService {
     raceDistance: Distance,
     prTime: number,
     desiredPrTime: number,
+    age: number,
   ): GeneratePlanResponse {
     const trainingPlan: TrainingPlan = [];
 
-    const distanceInMeters = {
+    const distanceNumber = {
       [Distance.k5]: 5,
       [Distance.k10]: 10,
       [Distance.HalfMarathon]: 21.09,
       [Distance.Marathon]: 42.2,
     }[raceDistance];
 
-    const predictedTime = this.predictRaceTime(prTime, distanceInMeters);
+    const predictedTime = this.predictRaceTime(prTime, distanceNumber);
 
     const experience = this.getExperienceLevelFrom10kTime(predictedTime);
     const numberOfTrainingDays =
@@ -679,7 +682,7 @@ export class TrainingService {
 
     const runTypes = this.getRunTypes(experience);
 
-    const heart_rate = this.calculateHR(experience, 36);
+    const heart_rate = this.calculateHR(experience, age);
 
     for (let week = 1; week <= trainingBlockLength[1]; week++) {
       const trainingWeek: TrainingWeek = {
@@ -695,7 +698,13 @@ export class TrainingService {
       trainingPlan.push(trainingWeek);
     }
 
-    this.fillWorkoutDetails(trainingPlan, experience, desiredPrTime);
+    this.fillWorkoutDetails(
+      trainingPlan,
+      experience,
+      prTime,
+      desiredPrTime,
+      distanceNumber,
+    );
 
     return {
       user: {

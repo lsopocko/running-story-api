@@ -20,12 +20,22 @@ export class TrainingController {
   @Post('generate-plan')
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   generatePlan(@Body() generatePlanDto: GeneratePlanDto) {
-    const { race_distance, current_best_time, desired_best_time } =
-      generatePlanDto;
+    const {
+      race_distance,
+      current_best_time,
+      desired_best_time,
+      birthdate,
+      race_date,
+    } = generatePlanDto;
+
+    const getAge = (birthDate) =>
+      Math.floor((Date.now() - new Date(birthDate).getTime()) / 3.15576e10);
+
     return this.trainingService.generateTrainingPlan(
       race_distance,
       current_best_time,
       desired_best_time,
+      getAge(birthdate),
     );
   }
 

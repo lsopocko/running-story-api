@@ -1,4 +1,10 @@
-import { IsString, IsNumber, IsNotEmpty, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsNotEmpty,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 import { Distance } from '../types';
 
 export class GeneratePlanDto {
@@ -21,4 +27,11 @@ export class GeneratePlanDto {
   @IsNumber()
   @IsNotEmpty()
   max_heart_rate: number; // In bpm (e.g., 180)
+
+  @IsDateString()
+  birthdate: Date; // In bpm (e.g., 180)
+
+  @IsDateString()
+  @IsNotEmpty()
+  race_date: Date; // In bpm (e.g., 180)
 }
